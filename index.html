@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Headline Generator | CrewAI Agent</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">
+          <i class="fas fa-newspaper"></i>
+          <h1>AI Headline Generator</h1>
+        </div>
+        <p class="tagline">Powered by CrewAI & Gemini</p>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Left Panel - Instructions -->
+        <div class="left-panel">
+          <div class="card instructions-card">
+            <h2><i class="fas fa-info-circle"></i> How It Works</h2>
+            <div class="instruction-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Search</h3>
+                <p>
+                  The agent searches the internet for the latest news and
+                  articles about your topic using Serper API.
+                </p>
+              </div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Summarize</h3>
+                <p>
+                  Using Groq's Llama model, the agent analyzes and summarizes
+                  the articles into a concise headline.
+                </p>
+              </div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Store</h3>
+                <p>
+                  The headline, date, sources, and topic are automatically saved
+                  to Google Sheets for record-keeping.
+                </p>
+              </div>
+            </div>
+
+            <div class="tech-stack">
+              <h3><i class="fas fa-cogs"></i> Technology Stack</h3>
+              <div class="tech-icons">
+                <div class="tech-item">
+                  <i class="fab fa-google"></i>
+                  <span>Gemini AI</span>
+                </div>
+                <div class="tech-item">
+                  <i class="fas fa-robot"></i>
+                  <span>CrewAI</span>
+                </div>
+                <div class="tech-item">
+                  <i class="fas fa-search"></i>
+                  <span>Serper API</span>
+                </div>
+                <div class="tech-item">
+                  <i class="fas fa-brain"></i>
+                  <span>Groq AI</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel - Input & Output -->
+        <div class="right-panel">
+          <div class="card input-card">
+            <h2><i class="fas fa-keyboard"></i> Generate Headline</h2>
+            <p class="input-description">
+              Enter any topic below and let our AI agent create a professional
+              headline:
+            </p>
+
+            <div class="input-group">
+              <div class="input-with-icon">
+                <i class="fas fa-lightbulb"></i>
+                <input
+                  type="text"
+                  id="topicInput"
+                  placeholder="e.g., Advancements in Renewable Energy Technologies, Latest AI Breakthroughs, Space Exploration News..."
+                  autocomplete="off"
+                />
+              </div>
+              <button id="generateBtn" class="generate-btn">
+                <i class="fas fa-bolt"></i>
+                <span>Generate Headline</span>
+              </button>
+            </div>
+
+            <div class="example-topics">
+              <p class="examples-title">Try these examples:</p>
+              <div class="topic-chips">
+                <button class="topic-chip">Quantum Computing Progress</button>
+                <button class="topic-chip">Climate Change Solutions</button>
+                <button class="topic-chip">AI in Healthcare</button>
+                <button class="topic-chip">Cryptocurrency Trends</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Section -->
+          <div class="card results-card">
+            <h2><i class="fas fa-history"></i> Generated Results</h2>
+            <div id="resultsContainer">
+              <div class="empty-state">
+                <i class="fas fa-headline"></i>
+                <h3>No Headlines Yet</h3>
+                <p>Enter a topic above to generate your first headline!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <p>
+          © 2024 AI Headline Generator | Built with CrewAI, Gemini, Groq &
+          Serper APIs
+        </p>
+        <div class="footer-links">
+          <a href="#" onclick="showApiInfo()"
+            ><i class="fas fa-key"></i> API Info</a
+          >
+          <a href="#" onclick="showCredits()"
+            ><i class="fas fa-heart"></i> Credits</a
+          >
+        </div>
+      </footer>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+      <div class="modal-content">
+        <div class="loader">
+          <div class="spinner"></div>
+          <h3>Generating Headline...</h3>
+          <p>The AI agent is working on your request</p>
+          <div class="agent-steps">
+            <div class="agent-step active">
+              <i class="fas fa-search"></i>
+              <span>Searching Web</span>
+            </div>
+            <div class="agent-step">
+              <i class="fas fa-file-alt"></i>
+              <span>Summarizing</span>
+            </div>
+            <div class="agent-step">
+              <i class="fas fa-save"></i>
+              <span>Saving to Sheets</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Info Modal -->
+    <div id="apiInfoModal" class="modal">
+      <div class="modal-content">
+        <h2><i class="fas fa-key"></i> Required API Keys</h2>
+        <div class="api-list">
+          <div class="api-item">
+            <h3>GEMINI_API_KEY</h3>
+            <p>Google Gemini AI for headline generation</p>
+          </div>
+          <div class="api-item">
+            <h3>SERPER_API_KEY</h3>
+            <p>Serper API for web search</p>
+          </div>
+          <div class="api-item">
+            <h3>GROQ_API_KEY</h3>
+            <p>Groq AI for text summarization</p>
+          </div>
+          <div class="api-item">
+            <h3>SPREADSHEET_ID</h3>
+            <p>Google Sheets ID for storage</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="close-btn">Got it!</button>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
