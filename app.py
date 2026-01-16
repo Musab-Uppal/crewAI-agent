@@ -13,11 +13,11 @@ summarizer_tool = Summarizer()
 spreadsheet_writer = SpreadsheetWriter()
 
 # Initialize LLM
-groq_llm = LLM(
-    model="llama-3.3-70b-versatile",
+gemini_llm = LLM(
+    model="gemini-3-flash-preview",
     temperature=0.7,
-    base_url="https://api.groq.com/api/openai/v1",
-    api_key=os.getenv("GROQ_API_KEY")
+    base_url="https://generativelanguage.googleapis.com/v1beta",
+    api_key=os.getenv("GEMINI_API_KEY")
 )
 
 # Create agent
@@ -27,12 +27,12 @@ headline_agent = Agent(
     backstory="You are a senior anchor person who searches the internet for articles about a given topic and generates summarized headlines.",
     tools=[search_tool, summarizer_tool, spreadsheet_writer],
     verbose=True,
-    llm=groq_llm,
+    llm=gemini_llm,
     allow_delegation=False
 )
 
 # Define the topic
-topic = "Video Editing"
+topic = "Advancements in Renewable Energy Technologies"
 
 
 search_topic = Task(
@@ -61,7 +61,3 @@ mycrew = Crew(
     tasks=[search_topic, summarize_headline, write_to_spreadsheet]
 )
 
-# Kickoff the crew
-result = mycrew.kickoff()
-print("CREW OUTPUT:")
-print(result)
