@@ -20,11 +20,8 @@
 body {
   font-family: "Poppins", sans-serif;
   background: var(--dark-bg);
-  background-image: radial-gradient(
-      at 47% 33%,
-      rgba(59, 130, 246, 0.1) 0,
-      transparent 59%
-    ),
+  background-image:
+    radial-gradient(at 47% 33%, rgba(59, 130, 246, 0.1) 0, transparent 59%),
     radial-gradient(at 82% 65%, rgba(139, 92, 246, 0.1) 0, transparent 55%);
   min-height: 100vh;
   color: var(--text-primary);
@@ -244,7 +241,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   white-space: nowrap;
 }
 
@@ -371,7 +370,102 @@ body {
   background: rgba(16, 185, 129, 0.2);
   color: var(--success);
 }
+/* Headline Details */
+.headline-details {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border-left: 3px solid var(--accent);
+}
 
+.headline-details p {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* Result Actions */
+.result-actions {
+  display: flex;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.sheet-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(66, 133, 244, 0.2);
+  color: #4285f4;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.sheet-link:hover {
+  background: rgba(66, 133, 244, 0.3);
+  transform: translateY(-2px);
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+/* Info Note */
+.info-note {
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border-left: 3px solid var(--accent);
+}
+
+/* Add to your existing sidebar in index.html */
+.sidebar-links {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-links h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.sidebar-link:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent);
+}
 .status-error {
   background: rgba(239, 68, 68, 0.2);
   color: var(--error);

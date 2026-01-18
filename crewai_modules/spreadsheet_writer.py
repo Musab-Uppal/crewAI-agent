@@ -20,14 +20,16 @@ class SpreadsheetWriter(BaseTool):
     name: str = "Spreadsheet Writer Tool"
     description: str = "Writes data to a specified Google Sheets spreadsheet."
     args_schema: type[BaseModel] = SpreadsheetInput
+    spreadsheet_id: str = ""
+    service: object = None
 
     def __init__(self):
-        super().__init__()
         spreadsheet_id = os.getenv("SPREADSHEET_ID")
         if not spreadsheet_id:
             raise ValueError("SPREADSHEET_ID not found in .env file")
-        object.__setattr__(self, 'spreadsheet_id', spreadsheet_id)
-        object.__setattr__(self, 'service', self._get_sheets_service())
+        
+        service = self._get_sheets_service()
+        super().__init__(spreadsheet_id=spreadsheet_id, service=service)
 
     def _get_sheets_service(self):
         creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/spreadsheets"])

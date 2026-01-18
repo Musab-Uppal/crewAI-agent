@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -12,7 +12,6 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&display=swap"
       rel="stylesheet"
@@ -92,7 +91,7 @@
 
         <!-- Right Panel - Input & Output -->
         <div class="right-panel">
-          <div class="card input-card">
+          <form id="headlineForm" class="card input-card">
             <h2><i class="fas fa-keyboard"></i> Generate Headline</h2>
             <p class="input-description">
               Enter any topic below and let our AI agent create a professional
@@ -105,26 +104,36 @@
                 <input
                   type="text"
                   id="topicInput"
+                  name="topic"
                   placeholder="e.g., Advancements in Renewable Energy Technologies, Latest AI Breakthroughs, Space Exploration News..."
                   autocomplete="off"
+                  required
                 />
               </div>
-              <button id="generateBtn" class="generate-btn">
+              <button type="button" id="generateBtn" class="generate-btn">
                 <i class="fas fa-bolt"></i>
                 <span>Generate Headline</span>
               </button>
             </div>
 
             <div class="example-topics">
-              <p class="examples-title">Try these examples:</p>
+              <p class="examples-title">Try these examples (click to use):</p>
               <div class="topic-chips">
-                <button class="topic-chip">Quantum Computing Progress</button>
-                <button class="topic-chip">Climate Change Solutions</button>
-                <button class="topic-chip">AI in Healthcare</button>
-                <button class="topic-chip">Cryptocurrency Trends</button>
+                <button type="button" class="topic-chip">
+                  Quantum Computing Progress
+                </button>
+                <button type="button" class="topic-chip">
+                  Climate Change Solutions
+                </button>
+                <button type="button" class="topic-chip">
+                  AI in Healthcare
+                </button>
+                <button type="button" class="topic-chip">
+                  Cryptocurrency Trends
+                </button>
               </div>
             </div>
-          </div>
+          </form>
 
           <!-- Results Section -->
           <div class="card results-card">
@@ -143,17 +152,9 @@
       <!-- Footer -->
       <footer class="footer">
         <p>
-          © 2024 AI Headline Generator | Built with CrewAI, Gemini, Groq &
+          © 2026 AI Headline Generator | Built with CrewAI, Gemini, Groq &
           Serper APIs
         </p>
-        <div class="footer-links">
-          <a href="#" onclick="showApiInfo()"
-            ><i class="fas fa-key"></i> API Info</a
-          >
-          <a href="#" onclick="showCredits()"
-            ><i class="fas fa-heart"></i> Credits</a
-          >
-        </div>
       </footer>
     </div>
 
@@ -163,9 +164,12 @@
         <div class="loader">
           <div class="spinner"></div>
           <h3>Generating Headline...</h3>
-          <p>The AI agent is working on your request</p>
+          <p>
+            The AI agent is working on your request. This may take 20-30
+            seconds.
+          </p>
           <div class="agent-steps">
-            <div class="agent-step active">
+            <div class="agent-step">
               <i class="fas fa-search"></i>
               <span>Searching Web</span>
             </div>
@@ -181,7 +185,17 @@
         </div>
       </div>
     </div>
-
+    <div class="sidebar-links">
+      <h3><i class="fas fa-external-link-alt"></i> Quick Links</h3>
+      <a
+        href="https://docs.google.com/spreadsheets/d/1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o/edit"
+        target="_blank"
+        class="sidebar-link"
+      >
+        <i class="fab fa-google-drive"></i>
+        <span>View Google Sheet</span>
+      </a>
+    </div>
     <!-- API Info Modal -->
     <div id="apiInfoModal" class="modal">
       <div class="modal-content">
@@ -190,18 +204,33 @@
           <div class="api-item">
             <h3>GEMINI_API_KEY</h3>
             <p>Google Gemini AI for headline generation</p>
+            <small
+              >Get from:
+              <a href="https://ai.google.dev" target="_blank"
+                >ai.google.dev</a
+              ></small
+            >
           </div>
           <div class="api-item">
             <h3>SERPER_API_KEY</h3>
             <p>Serper API for web search</p>
+            <small
+              >Get from:
+              <a href="https://serper.dev" target="_blank">serper.dev</a></small
+            >
           </div>
           <div class="api-item">
             <h3>GROQ_API_KEY</h3>
             <p>Groq AI for text summarization</p>
+            <small
+              >Get from:
+              <a href="https://groq.com" target="_blank">groq.com</a></small
+            >
           </div>
           <div class="api-item">
             <h3>SPREADSHEET_ID</h3>
             <p>Google Sheets ID for storage</p>
+            <small>Create a Google Sheet and copy its ID from the URL</small>
           </div>
         </div>
         <button onclick="closeModal()" class="close-btn">Got it!</button>
