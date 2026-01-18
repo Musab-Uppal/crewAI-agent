@@ -60,7 +60,7 @@ class HeadlineGenerator:
             search_task = Task(
                 description=f"""Research '{topic}' thoroughly. Find 3-5 recent, credible sources.
                               Focus on facts, statistics, and current developments from the past month.
-                              Return sources as a formatted list.""",
+                              Return sources as a formatted list of articles from where the news came from.""",
                 expected_output="List of sources with URLs and key facts.",
                 agent=self.headline_agent
             )

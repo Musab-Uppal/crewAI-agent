@@ -25,6 +25,50 @@ class SlackSender(BaseTool):
         spreadsheet_id = "1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o"
         super().__init__(webhook_url=webhook_url, spreadsheet_id=spreadsheet_id)
 
+    def _format_sources_as_links(self, sources: str) -> str:
+        """Convert sources text into Slack markdown links"""
+        if not sources or sources.strip() == "":
+            return "See spreadsheet for details"
+        
+        lines = sources.split('\n')
+        formatted_links = []
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Check if line contains a URL
+            if 'http://' in line or 'https://' in line:
+                # Try to parse different formats and extract URL
+                if ' - ' in line:
+                    # Format: "Title - http://url"
+                    parts = line.split(' - ', 1)
+                    title = parts[0].strip()
+                    url = parts[1].strip()
+                    formatted_links.append(f"<{url}|{title}>")
+                elif ': ' in line and not line.startswith('http'):
+                    # Format: "Title: http://url"
+                    parts = line.split(': ', 1)
+                    title = parts[0].strip()
+                    url = parts[1].strip()
+                    formatted_links.append(f"<{url}|{title}>")
+                else:
+                    # Extract URL and use it as link
+                    import re
+                    url_match = re.search(r'https?://[^\s]+', line)
+                    if url_match:
+                        url = url_match.group(0)
+                        title = line.replace(url, '').strip() or "Source Link"
+                        formatted_links.append(f"<{url}|{title}>")
+                    else:
+                        formatted_links.append(line)
+            else:
+                # Plain text without URL
+                formatted_links.append(line)
+        
+        return '\n'.join(formatted_links) if formatted_links else "See spreadsheet for details"
+
     def _create_slack_message(self, headline: str, topic: str, sources: str = "") -> dict:
         """Create a formatted Slack message"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
