@@ -25,7 +25,9 @@
           <i class="fas fa-newspaper"></i>
           <h1>AI Headline Generator</h1>
         </div>
-        <p class="tagline">Powered by CrewAI & Gemini</p>
+        <p class="tagline">
+          Powered by CrewAI & Gemini | Daily Automation Enabled
+        </p>
       </header>
 
       <!-- Main Content -->
@@ -57,11 +59,43 @@
             <div class="instruction-step">
               <div class="step-number">3</div>
               <div class="step-content">
-                <h3>Store</h3>
+                <h3>Store & Share</h3>
                 <p>
                   The headline, date, sources, and topic are automatically saved
-                  to Google Sheets for record-keeping.
+                  to Google Sheets and sent to Slack.
                 </p>
+              </div>
+            </div>
+
+            <!-- Daily Automation Card -->
+            <div class="automation-card">
+              <h3><i class="fas fa-robot"></i> Daily Automation</h3>
+              <p>
+                <strong>Status:</strong>
+                <span id="cronStatus">Checking...</span>
+              </p>
+              <p>
+                <strong>Next Run:</strong> <span id="nextRun">9:00 AM UTC</span>
+              </p>
+              <p><strong>Schedule:</strong> Daily at 9:00 AM UTC</p>
+
+              <div class="automation-actions">
+                <button onclick="triggerAutomation()" class="auto-btn">
+                  <i class="fas fa-play"></i> Run Now
+                </button>
+                <button onclick="checkCronStatus()" class="auto-btn secondary">
+                  <i class="fas fa-sync"></i> Refresh Status
+                </button>
+              </div>
+
+              <div class="automation-info">
+                <p>
+                  <i class="fas fa-info-circle"></i> Headlines are generated
+                  automatically every day.
+                </p>
+                <a href="/api/cron/status" target="_blank" class="auto-link">
+                  <i class="fas fa-chart-line"></i> View Detailed Status
+                </a>
               </div>
             </div>
 
@@ -84,7 +118,36 @@
                   <i class="fas fa-brain"></i>
                   <span>Groq AI</span>
                 </div>
+                <div class="tech-item">
+                  <i class="fab fa-slack"></i>
+                  <span>Slack</span>
+                </div>
+                <div class="tech-item">
+                  <i class="fab fa-google-drive"></i>
+                  <span>Google Sheets</span>
+                </div>
               </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="sidebar-links">
+              <h3><i class="fas fa-external-link-alt"></i> Quick Links</h3>
+              <a
+                href="https://docs.google.com/spreadsheets/d/1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o/edit"
+                target="_blank"
+                class="sidebar-link"
+              >
+                <i class="fab fa-google-drive"></i>
+                <span>View Google Sheet</span>
+              </a>
+              <a href="#" onclick="showApiInfo()" class="sidebar-link">
+                <i class="fas fa-key"></i>
+                <span>API Configuration</span>
+              </a>
+              <a href="/api/cron/status" target="_blank" class="sidebar-link">
+                <i class="fas fa-chart-line"></i>
+                <span>Automation Status</span>
+              </a>
             </div>
           </div>
         </div>
@@ -143,6 +206,10 @@
                 <i class="fas fa-headline"></i>
                 <h3>No Headlines Yet</h3>
                 <p>Enter a topic above to generate your first headline!</p>
+                <p class="hint">
+                  💡 Try clicking "Run Now" in the automation panel for a daily
+                  topic.
+                </p>
               </div>
             </div>
           </div>
@@ -152,9 +219,23 @@
       <!-- Footer -->
       <footer class="footer">
         <p>
-          © 2026 AI Headline Generator | Built with CrewAI, Gemini, Groq &
-          Serper APIs
+          © 2024 AI Headline Generator | Built with CrewAI, Gemini, Groq &
+          Serper APIs | Daily Automation via Vercel Cron
         </p>
+        <div class="footer-links">
+          <a href="#" onclick="showApiInfo()"
+            ><i class="fas fa-key"></i> API Info</a
+          >
+          <a href="#" onclick="showCredits()"
+            ><i class="fas fa-heart"></i> Credits</a
+          >
+          <a href="javascript:void(0)" onclick="testConnection()"
+            ><i class="fas fa-wifi"></i> Test Connection</a
+          >
+          <a href="/api/cron/status" target="_blank"
+            ><i class="fas fa-robot"></i> Cron Status</a
+          >
+        </div>
       </footer>
     </div>
 
@@ -181,21 +262,15 @@
               <i class="fas fa-save"></i>
               <span>Saving to Sheets</span>
             </div>
+            <div class="agent-step">
+              <i class="fab fa-slack"></i>
+              <span>Sending to Slack</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="sidebar-links">
-      <h3><i class="fas fa-external-link-alt"></i> Quick Links</h3>
-      <a
-        href="https://docs.google.com/spreadsheets/d/1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o/edit"
-        target="_blank"
-        class="sidebar-link"
-      >
-        <i class="fab fa-google-drive"></i>
-        <span>View Google Sheet</span>
-      </a>
-    </div>
+
     <!-- API Info Modal -->
     <div id="apiInfoModal" class="modal">
       <div class="modal-content">
@@ -228,9 +303,19 @@
             >
           </div>
           <div class="api-item">
-            <h3>SPREADSHEET_ID</h3>
-            <p>Google Sheets ID for storage</p>
-            <small>Create a Google Sheet and copy its ID from the URL</small>
+            <h3>SLACK_WEBHOOK_URL</h3>
+            <p>Slack for notifications</p>
+            <small
+              >Get from:
+              <a href="https://api.slack.com/apps" target="_blank"
+                >Slack API</a
+              ></small
+            >
+          </div>
+          <div class="api-item">
+            <h3>CRON_SECRET</h3>
+            <p>Optional: For cron job security</p>
+            <small>Set any random string in .env</small>
           </div>
         </div>
         <button onclick="closeModal()" class="close-btn">Got it!</button>

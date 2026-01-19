@@ -1,3 +1,4 @@
+// static/script.js - Complete updated version
 document.addEventListener("DOMContentLoaded", function () {
   const topicInput = document.getElementById("topicInput");
   const generateBtn = document.getElementById("generateBtn");
@@ -9,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentStep = 0;
   let stepInterval;
 
-  // Handle example topic chips - FIXED
+  // Handle example topic chips
   topicChips.forEach((chip) => {
     chip.addEventListener("click", function () {
       topicInput.value = this.textContent;
@@ -20,11 +21,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // Handle Enter key in input
   topicInput.addEventListener("keypress", function (e) {
     if (e.key === "Enter" && !generateBtn.disabled) {
+      e.preventDefault();
       generateHeadline();
     }
   });
 
-  // Handle generate button click - FIXED
+  // Handle generate button click
   generateBtn.addEventListener("click", function (e) {
     e.preventDefault();
     generateHeadline();
@@ -83,6 +85,121 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // ============================================================================
+  // CRON JOB FUNCTIONS
+  // ============================================================================
+
+  async function checkCronStatus() {
+    try {
+      const response = await fetch("/api/cron/status");
+      const data = await response.json();
+
+      document.getElementById("cronStatus").innerHTML =
+        `<span style="color: #10b981;">✓ Active</span>`;
+      document.getElementById("nextRun").textContent =
+        data.schedule?.in_words || "9:00 AM UTC";
+
+      // Update the results panel with status
+      updateCronStatusPanel(data);
+    } catch (error) {
+      document.getElementById("cronStatus").innerHTML =
+        `<span style="color: #ef4444;">✗ Error</span>`;
+      console.error("Cron status check failed:", error);
+    }
+  }
+
+  async function triggerAutomation() {
+    const topic = prompt("Enter a topic (or leave empty for daily topic):", "");
+
+    const generateBtn = document.getElementById("generateBtn");
+    const originalText = generateBtn.innerHTML;
+
+    generateBtn.disabled = true;
+    generateBtn.innerHTML =
+      '<i class="fas fa-robot fa-spin"></i><span>Running Automation...</span>';
+
+    try {
+      const response = await fetch("/api/automation/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic || undefined }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Display the result
+        displayResult(result.result, result.topic);
+
+        // Show success message
+        showNotification("Automation completed successfully!", "success");
+      } else {
+        showNotification(`Error: ${result.error}`, "error");
+      }
+    } catch (error) {
+      showNotification(
+        `Failed to trigger automation: ${error.message}`,
+        "error",
+      );
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = originalText;
+    }
+  }
+
+  function updateCronStatusPanel(statusData) {
+    // Create or update a status panel in results
+    const statusHTML = `
+            <div class="cron-status-panel">
+                <h4><i class="fas fa-robot"></i> Automation Status</h4>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Schedule</div>
+                        <div class="status-value">${statusData.schedule.human_readable}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Next Run</div>
+                        <div class="status-value">${statusData.schedule.in_words}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Total Runs</div>
+                        <div class="status-value">${statusData.statistics.total_executions}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Success Rate</div>
+                        <div class="status-value">
+                            ${
+                              statusData.statistics.total_executions > 0
+                                ? Math.round(
+                                    (statusData.statistics.successful /
+                                      statusData.statistics.total_executions) *
+                                      100,
+                                  )
+                                : 0
+                            }%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    // Insert at top of results
+    const resultsContainer = document.getElementById("resultsContainer");
+    if (resultsContainer) {
+      const existingStatus =
+        resultsContainer.querySelector(".cron-status-panel");
+      if (existingStatus) {
+        existingStatus.innerHTML = statusHTML;
+      } else {
+        resultsContainer.insertAdjacentHTML("afterbegin", statusHTML);
+      }
+    }
+  }
+
+  // ============================================================================
+  // UI HELPER FUNCTIONS
+  // ============================================================================
+
   function showLoadingModal() {
     loadingModal.style.display = "block";
     startStepAnimation();
@@ -105,7 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAgentSteps();
 
     stepInterval = setInterval(() => {
-      currentStep = (currentStep + 1) % 4; // 0-3 steps (0 for reset)
+      currentStep = (currentStep + 1) % 5; // 0-4 steps
       updateAgentSteps();
     }, 1500);
   }
@@ -155,69 +272,173 @@ document.addEventListener("DOMContentLoaded", function () {
     const time = now.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
     });
 
-    // Clean and format the headline
-    let headlineText = data.headline || "No headline generated";
-    headlineText = headlineText.replace(/^"|"$/g, "");
-    headlineText = headlineText.replace(/\\n/g, "<br>");
+    // Clean headline
+    let headline = data.headline || "No headline generated";
+    headline = headline.replace(/^HEADLINE:\s*/i, "").trim();
 
-    // Extract just the main headline if it's in a verbose format
-    // This handles CrewAI's sometimes verbose output
-    const cleanHeadline = headlineText.split("\n")[0];
-    const details = headlineText.split("\n").slice(1).join("<br>");
+    // Format key points
+    let keyPointsHTML = "";
+    if (data.key_points && data.key_points.length > 0) {
+      keyPointsHTML = `
+                <div class="key-points-card">
+                    <div class="key-points-header">
+                        <i class="fas fa-key"></i>
+                        <h4>Key Information</h4>
+                    </div>
+                    <div class="key-points-list">
+                        ${data.key_points
+                          .map(
+                            (point) => `
+                            <div class="key-point-item">
+                                <i class="fas fa-chevron-right"></i>
+                                <span>${point}</span>
+                            </div>
+                        `,
+                          )
+                          .join("")}
+                    </div>
+                </div>
+            `;
+    }
+
+    // Slack status
+    const slackSuccess =
+      data.slack_status === "Sent" ||
+      data.slack_status?.toLowerCase().includes("success");
 
     return `
-        <div class="headline-result">
-            <div class="headline-topic">
-                <i class="fas fa-tag"></i>
-                <h3>Topic: ${topic}</h3>
-                <span class="status-badge status-success">
-                    <i class="fas fa-check-circle"></i>
-                    Successfully Generated
-                </span>
-            </div>
-            
-            <div class="headline-content">
-                <div class="headline-text">${cleanHeadline}</div>
-                
-                ${
-                  details
-                    ? `
-                <div class="headline-details">
-                    <p><strong>Details:</strong></p>
-                    <p>${details}</p>
+            <div class="headline-result">
+                <!-- Header -->
+                <div class="result-header">
+                    <div class="topic-display">
+                        <i class="fas fa-bullseye"></i>
+                        <h3>${topic}</h3>
+                    </div>
+                    <div class="status-badges">
+                        <span class="status-badge status-success">
+                            <i class="fas fa-check-circle"></i> Generated
+                        </span>
+                        <span class="status-badge ${slackSuccess ? "status-success" : "status-info"}">
+                            <i class="fab fa-slack"></i> ${slackSuccess ? "Sent to Slack" : "Slack Pending"}
+                        </span>
+                        <span class="status-badge status-info">
+                            <i class="fas fa-save"></i> Saved to Sheets
+                        </span>
+                    </div>
                 </div>
-                `
-                    : ""
-                }
                 
-                <div class="result-meta">
-                    <span><i class="far fa-calendar"></i> ${date}</span>
-                    <span><i class="far fa-clock"></i> ${time}</span>
-                    <span><i class="fas fa-save"></i> Saved to Google Sheets</span>
-                    <span><i class="fab fa-slack"></i> Sent to Slack</span>
+                <!-- Headline Display -->
+                <div class="headline-display-section">
+                    <div class="headline-wrapper">
+                        <i class="fas fa-quote-left quote-icon left"></i>
+                        <h2 class="headline-text">${headline}</h2>
+                        <i class="fas fa-quote-right quote-icon right"></i>
+                    </div>
+                    
+                    ${keyPointsHTML}
+                    
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <i class="far fa-calendar"></i>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Date</div>
+                                <div class="metadata-value">${date}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-item">
+                            <i class="far fa-clock"></i>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Time</div>
+                                <div class="metadata-value">${time}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-item">
+                            <i class="fas fa-hashtag"></i>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Words</div>
+                                <div class="metadata-value">${headline.split(" ").length}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-item">
+                            <i class="fas fa-robot"></i>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Agents Used</div>
+                                <div class="metadata-value">${data.agents_used ? data.agents_used.join(", ") : "2"}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-section">
+                    <a href="https://docs.google.com/spreadsheets/d/${data.spreadsheet_link || "1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o"}" 
+                       target="_blank" 
+                       class="action-button primary">
+                        <i class="fab fa-google-drive"></i>
+                        <span>View in Google Sheets</span>
+                        <i class="fas fa-external-link-alt external-icon"></i>
+                    </a>
+                    
+                    <button onclick="copyToClipboard('${headline.replace(/'/g, "\\'")}')" 
+                            class="action-button secondary">
+                        <i class="far fa-copy"></i>
+                        <span>Copy Headline</span>
+                    </button>
+                    
+                    <button onclick="shareResult('${headline.replace(/'/g, "\\'")}', '${topic}')" 
+                            class="action-button tertiary">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Share Result</span>
+                    </button>
+                </div>
+                
+                <!-- System Status -->
+                <div class="system-status-section">
+                    <h4><i class="fas fa-server"></i> System Status</h4>
+                    <div class="status-grid">
+                        <div class="system-status-item">
+                            <i class="fas fa-search"></i>
+                            <div>
+                                <div class="system-status-label">Research Agent</div>
+                                <div class="system-status-value success">Complete</div>
+                            </div>
+                        </div>
+                        
+                        <div class="system-status-item">
+                            <i class="fab fa-slack ${slackSuccess ? "success" : "warning"}"></i>
+                            <div>
+                                <div class="system-status-label">Slack Integration</div>
+                                <div class="system-status-value ${slackSuccess ? "success" : "warning"}">
+                                    ${slackSuccess ? "Message Sent" : "Check Configuration"}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="system-status-item">
+                            <i class="fab fa-google"></i>
+                            <div>
+                                <div class="system-status-label">Google Sheets</div>
+                                <div class="system-status-value success">Data Saved</div>
+                            </div>
+                        </div>
+                        
+                        <div class="system-status-item">
+                            <i class="fas fa-database"></i>
+                            <div>
+                                <div class="system-status-label">API Connection</div>
+                                <div class="system-status-value success">Active</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="result-actions">
-                <a href="https://docs.google.com/spreadsheets/d/1Ol0Fi9OE-DX78E_187x3BGggQm2LeRTbawmJm3tgF5o/edit" 
-                   target="_blank" 
-                   class="sheet-link">
-                    <i class="fab fa-google-drive"></i> View in Google Sheets
-                </a>
-                
-                <button class="copy-btn" onclick="copyToClipboard('${cleanHeadline.replace(/'/g, "\\'")}')">
-                    <i class="far fa-copy"></i> Copy Headline
-                </button>
-            </div>
-            
-            <p class="info-note">
-                <i class="fas fa-info-circle"></i> 
-                This headline was generated by AI, saved to Google Sheets, and shared on Slack.
-            </p>
-        </div>
-    `;
+        `;
   }
 
   function createErrorHTML(data) {
@@ -226,28 +447,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
     return `
             <div class="headline-result">
-                <div class="headline-topic">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Generation Failed</h3>
+                <div class="result-header">
+                    <div class="topic-display">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Generation Failed</h3>
+                    </div>
                     <span class="status-badge status-error">
                         <i class="fas fa-times-circle"></i>
                         Error Occurred
                     </span>
                 </div>
-                <div class="headline-content">
-                    <p style="color: var(--error); font-size: 0.9rem; padding: 1rem;">
-                        ${errorMessage}
-                    </p>
+                
+                <div class="headline-display-section">
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--error); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--error); margin-bottom: 1rem;">Error Generating Headline</h3>
+                        <p style="color: var(--text-secondary);">${errorMessage}</p>
+                    </div>
                 </div>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem;">
-                    <i class="fas fa-lightbulb"></i> Tips:
-                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
-                        <li>Check that all API keys are properly set in your environment variables</li>
-                        <li>Ensure the Google Sheet is shared with your service account</li>
-                        <li>Verify internet connectivity</li>
-                        <li>Try a different topic</li>
-                    </ul>
-                </p>
+                
+                <div class="system-status-section">
+                    <h4><i class="fas fa-wrench"></i> Troubleshooting Tips</h4>
+                    <div class="key-points-list">
+                        <div class="key-point-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Check that all API keys are properly set in your environment variables</span>
+                        </div>
+                        <div class="key-point-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Ensure the Google Sheet is shared with your service account</span>
+                        </div>
+                        <div class="key-point-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Verify internet connectivity and API rate limits</span>
+                        </div>
+                        <div class="key-point-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Try a different topic or check the console for detailed errors</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
   }
@@ -255,7 +494,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function showError(message) {
     const errorHTML = `
             <div class="headline-result">
-                <div class="headline-content" style="text-align: center; padding: 2rem;">
+                <div class="headline-display-section" style="text-align: center; padding: 2rem;">
                     <p style="color: var(--error); font-size: 1rem;">
                         <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
                         ${message}
@@ -266,9 +505,73 @@ document.addEventListener("DOMContentLoaded", function () {
     resultsContainer.innerHTML = errorHTML;
   }
 
-  // Debug: Check if button event listener is attached
-  console.log("Generate button:", generateBtn);
-  console.log("Button event listeners:", generateBtn.onclick);
+  function showNotification(message, type = "info") {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+            <i class="fas fa-${type === "success" ? "check-circle" : "exclamation-circle"}"></i>
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        `;
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // ============================================================================
+  // GLOBAL FUNCTIONS
+  // ============================================================================
+
+  // Copy to clipboard function
+  window.copyToClipboard = function (text) {
+    navigator.clipboard
+      .writeText(text)
+      .then(function () {
+        // Show success message
+        const originalBtn = event.target.closest("button");
+        const originalHTML = originalBtn.innerHTML;
+
+        originalBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        originalBtn.style.background = "rgba(16, 185, 129, 0.2)";
+        originalBtn.style.color = "var(--success)";
+
+        setTimeout(() => {
+          originalBtn.innerHTML = originalHTML;
+          originalBtn.style.background = "";
+          originalBtn.style.color = "";
+        }, 2000);
+      })
+      .catch(function (err) {
+        alert("Failed to copy: " + err);
+      });
+  };
+
+  // Share result function
+  window.shareResult = function (headline, topic) {
+    const shareText = `Check out this AI-generated headline about ${topic}: "${headline}"\n\nGenerated by AI Headline Generator`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: `AI Headline: ${topic}`,
+        text: shareText,
+        url: window.location.href,
+      });
+    } else {
+      copyToClipboard(shareText);
+      showNotification(
+        "Headline copied to clipboard! Share it anywhere.",
+        "success",
+      );
+    }
+  };
 
   // Modal functions
   window.showApiInfo = function () {
@@ -277,12 +580,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.showCredits = function () {
     alert(
-      'Built with:\n• CrewAI Framework\n• Google Gemini AI\n• Groq AI\n• Serper API\n• Google Sheets API\n\nClick "API Info" for required API keys.',
+      "Built with:\n• CrewAI Framework\n• Google Gemini AI\n• Groq AI\n• Serper API\n• Slack API\n• Google Sheets API\n\nDaily Automation via Vercel Cron Jobs",
     );
   };
 
   window.closeModal = function () {
     apiInfoModal.style.display = "none";
+  };
+
+  window.testConnection = async function () {
+    try {
+      const response = await fetch("/api/health");
+      const data = await response.json();
+      alert(
+        `✅ Connection successful!\n\nStatus: ${data.status}\nVersion: ${data.version}\nTime: ${new Date(data.timestamp).toLocaleTimeString()}`,
+      );
+    } catch (error) {
+      alert(`❌ Connection failed: ${error.message}`);
+    }
   };
 
   // Close modals when clicking outside
@@ -304,10 +619,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 <i class="fas fa-headline"></i>
                 <h3>No Headlines Yet</h3>
                 <p>Enter a topic above to generate your first headline!</p>
+                <p class="hint">💡 Try clicking "Run Now" in the automation panel for a daily topic.</p>
             </div>
         `;
   }
 
-  // Make generateHeadline function available globally for testing
+  // Make functions available globally
   window.generateHeadline = generateHeadline;
+  window.triggerAutomation = triggerAutomation;
+  window.checkCronStatus = checkCronStatus;
+
+  // Check cron status when page loads
+  setTimeout(checkCronStatus, 1000);
+
+  // Debug info
+  console.log("AI Headline Generator script loaded successfully");
+  console.log(
+    "Generate button element:",
+    document.getElementById("generateBtn"),
+  );
+  console.log("Topic input element:", document.getElementById("topicInput"));
 });
